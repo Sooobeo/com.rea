@@ -6,6 +6,8 @@
 > 편집 기준: 본문은 핵심 질문에 답하는 데 필요한 분량만 사용하고 세부 원자료는 부록으로 분리  
 > 핵심 질문: 2026년 공시된 대형 수주가 매출·이익·현금흐름으로 얼마나 전환되며, 현재 기업가치는 어느 수준의 전환을 이미 반영하고 있는가?
 
+> **Phase 1 확정 기준:** 공시 컷오프 2026-08-13 16:00 KST, 주가 기준일 2026-08-13 종가. 2026년 반기보고서는 컷오프 시점 미제출이며, 결과·근거·갱신 게이트는 [`01_엑시콘_Phase1_기준일_최신성점검.md`](01_엑시콘_Phase1_기준일_최신성점검.md)를 따른다.
+
 ---
 
 ## 1. 구현 목표
@@ -276,7 +278,7 @@
 | 3월 장비 계약 | CLT·SSD Tester 302억원, 종료일 2026-12-31, 납품 후 90%·SET UP 후 10% 지급 | 계약금액·일정은 사실. 90/10은 현금회수 조건이며 매출 인식률이 아님 | [`R03`](https://kind.krx.co.kr/external/2026/03/04/001110/20260304000427/70370.htm) |
 | 5월 Board 계약 | CLT Interface Board 96.863억원, 최초 종료일 2026-07-31, 제품 공급 후 100% 지급 | Board 계약의 금액·초기 일정 기준 | [`R04`](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260506900318) |
 | Board 납기 변경 | 위 계약 종료일이 2026-09-04로 변경 | 실제 일정 지연이 발생할 수 있다는 직접 근거 | [`R07`](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727900650) |
-| 추가 Board 계약 | CLT Interface Board 68.992억원, 종료일 2026-09-30, 제품 공급 후 100% 지급 | 별도 공식 계약으로만 Board 매출 후보에 반영 | [`R05`](https://kind.krx.co.kr/external/2026/05/28/000396/20260528000321/70370.htm) |
+| 6월 CIB 등 계약 | 반도체검사장비(CIB 등) 120.654억원, 종료일 2026-12-31, 제품 공급 후 100% 지급 | 엑시콘의 별도 공식 계약으로만 CIB·Board 매출 후보에 반영 | [`R05`](https://kind.krx.co.kr/external/2026/06/04/000245/20260602000173/70370.htm) |
 | 7월 장비 계약 | CLT·SSD Tester 498.5억원, 종료일 2026-12-31 | 계약금액과 일정은 반영하되 검수 완료 전 인식액 확정 금지 | [`R06`](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260710900182) |
 | 외부 전망 | 2026-06-18 보고서의 2026년 매출·이익 전망은 7월 계약 공시 이전에 작성 | 시장 기대 비교용이며 회사 실제치나 Base 입력값으로 취급하지 않음 | [`R08`](https://consensus.hankyung.com/analysis/downpdf?report_idx=650132), 신뢰도 `C` |
 
@@ -332,7 +334,7 @@ Peer는 단순히 반도체 후공정 회사라는 이유로 묶지 않는다.
 | 마진 하락 | 공시 매출총이익·GPM | 실제 GPM이 Base에 사용한 공시 관측 범위를 벗어남 | 실제치로 모델 갱신; 제품별 원인이 공시되지 않으면 임의 배분 금지 | `R01`, `R02`, 후속 정기공시 |
 | 운전자본 악화 | 재고, 매출채권, OCF | 실제 재고·채권·OCF가 Base bridge와 반대 방향으로 변함 | 공시 증감액으로 OCF bridge 갱신; 별도 임의 할인 적용 금지 | `R01`, 후속 정기공시 |
 | 고객 집중 | 계약 상대방, 지역별 매출, 고객 공시 | 신규 계약이 동일 고객에 집중되고 공식 신규 고객 증거가 없음 | 장기 성장률은 유지하지 않고 확인 가능한 계약기간까지만 모델링 | `R01`, `R03`~`R07` |
-| 반복매출 미확인 | Board·수리용역 계약과 공시 매출 | 후속 계약 또는 용역 매출이 공개자료로 확인되지 않음 | 반복매출 성장항목을 만들지 않음 | `R01`, `R04`, `R05` |
+| 반복매출 미확인 | Board·CIB·수리용역 계약과 공시 매출 | 후속 계약 또는 용역 매출이 공개자료로 확인되지 않음 | 반복매출 성장항목을 만들지 않음 | `R01`, `R04`, `R05` |
 | 희석 | 발행주식 수, 자기주식, CB·BW·스톡옵션 | 잠재주식이 공시됨 | 공시 조건에 따른 완전희석 주식 수로 재계산 | `R01`, 후속 DART·KIND 공시 |
 
 최종 보고서에는 “의미 있게”, “크게”, “빠르게” 같은 무기준 표현을 경고 조건으로 쓰지 않는다. 모든 조건은 공시 이벤트 또는 Base 산식에 사용한 실제 관측 범위와 연결한다.
@@ -349,6 +351,8 @@ Peer는 단순히 반도체 후공정 회사라는 이유로 묶지 않는다.
 4. 바이오 우선 검토로 남아 있는 기존 계획 문구는 이번 보고서 범위에서 제외한다.
 
 완료 기준: 사용할 최신 공시 목록과 분석 범위가 확정돼 있다.
+
+**Phase 1 상태:** 2026-08-13 16:00 KST 컷오프 기준 완료. 사용 공시 목록과 분석 범위는 [`01_엑시콘_Phase1_기준일_최신성점검.md`](01_엑시콘_Phase1_기준일_최신성점검.md)에서 확정했다. 2026년 반기보고서는 2026-08-13 기준 미제출이며, 공식 제출기한은 2026-08-14이므로 Phase 2 착수 전에 DART·KIND를 재조회한다.
 
 ### Phase 2 — 소스로그와 원자료 구축
 
@@ -495,18 +499,20 @@ Peer는 단순히 반도체 후공정 회사라는 이유로 묶지 않는다.
 | `R02` | A/F | [엑시콘 2025년 사업보고서](https://kind.krx.co.kr/external/2026/03/16/002754/20260316007744/11011.htm) | 2025년 제품 매출, 과거 재무, 사업 구조, 주문생산 특성 |
 | `R03` | A/F | [2026-03-04 CLT·SSD Tester 302억원 계약](https://kind.krx.co.kr/external/2026/03/04/001110/20260304000427/70370.htm) | 계약금액, 상대방, 계약기간, 납품·SET UP 대금 조건 |
 | `R04` | A/F | [2026-05-06 CLT Interface Board 96.863억원 계약](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260506900318) | 계약금액, 최초 종료일, 지급조건 |
-| `R05` | A/F | [2026-05-28 CLT Interface Board 68.992억원 계약](https://kind.krx.co.kr/external/2026/05/28/000396/20260528000321/70370.htm) | 계약금액, 종료일, 지급조건 |
+| `R05` | A/F | [2026-06-04 반도체검사장비(CIB 등) 120.654억원 계약](https://kind.krx.co.kr/external/2026/06/04/000245/20260602000173/70370.htm) | 계약금액, 상대방, 계약기간, 지급조건 |
 | `R06` | A/F | [2026-07-10 CLT·SSD Tester 498.5억원 계약](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260710900182) | 계약금액, 상대방, 계약기간 |
 | `R07` | A/F | [2026-07-27 Interface Board 계약 정정](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727900650) | 종료일 변경 및 일정 지연 사례 |
-| `R08` | C/E | [대신증권 엑시콘 기업분석, 2026-06-18](https://consensus.hankyung.com/analysis/downpdf?report_idx=650132) | 7월 대형 계약 전 외부 실적 전망과 시장 기대 비교. 실제치로 사용 금지 |
+| `R08` | C/E | [대신증권 엑시콘 기업분석 PDF, 2026-06-18](https://consensus.hankyung.com/analysis/downpdf?report_idx=650132) · [문서 메타데이터](https://markets.hankyung.com/consensus/view/650132) | 7월 대형 계약 전 외부 실적 전망과 시장 기대 비교. 집계사이트 보존본이며 실제치로 사용 금지 |
 | `R09` | A/F | [KRX 정보데이터시스템](https://data.krx.co.kr/) | 동일 기준일 주가, 시가총액, 상장주식 수 교차검증 |
 | `R10` | A/F | [DART 엑시콘 정기공시 검색](https://dart.fss.or.kr/navi/searchNavi.do?naviCode=A002&naviCrpCik=00611736&naviCrpNm=%EC%97%91%EC%8B%9C%EC%BD%98) | 최신 반기·분기·사업보고서 및 정정 여부 확인 |
-| `R11` | B/C | [SEMI 2026 반도체 장비 전망, 2026-07-15](https://www.semi.org/jp/news-resources/press/20260715) | 테스트 장비 산업 성장 전망. 엑시콘 매출 추정에 직접 대입 금지 |
-| `R12` | A/C | [TSMC 2026년 2분기 실적발표 Transcript](https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/547d1696765e05ce3adb81c108ce1c8c1682b80c/TSMC%202Q26%20Transcript.pdf) | 고객 관점의 테스트 수요·테스터 제약 설명. 엑시콘 고객 수요로 동일시 금지 |
-| `R13` | B/C | [Advantest FY2026 1Q Results](https://www.advantest.com/en/news/2026/qnpuno0000000cr7-att/E_FR_FY2026_1Q.pdf) | 글로벌 ATE 수요 교차검증. 엑시콘 점유율·수주 추정에 직접 대입 금지 |
+| `R11` | C | [SEMI 2026 반도체 장비 전망, 2026-07-14](https://www.semi.org/en/semi-press-release/global-semiconductor-equipment-sales-forecast-to-reach-a-record-229-billion-dollars-in-2028-semi-reports) | 산업기관의 테스트 장비 전망. 엑시콘 매출 추정에 직접 대입 금지 |
+| `R12` | A/F·C | [TSMC 2026년 2분기 공식 허브](https://investor.tsmc.com/english/quarterly-results/2026/q2) · [Earnings Call Transcript](https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-07/547d1696765e05ce3adb81c108ce1c8c1682b80c/TSMC%202Q26%20Transcript.pdf) | 공시 실적은 `F`, 테스트 수요·테스터 제약에 관한 경영진 발언은 `C`. 엑시콘 고객 수요로 동일시 금지 |
+| `R13` | A/F·C | [Advantest FY2026 1Q Results](https://www.advantest.com/en/news/2026/qnpuno0000000cr7-att/E_FR_FY2026_1Q.pdf) | 공시 재무는 `F`, AI·HPC 테스터 수요·전망은 `C`. 엑시콘 점유율·수주 추정에 직접 대입 금지 |
 | `R14` | A/F | [ISC 2026년 1분기보고서](https://kind.krx.co.kr/external/2026/05/15/000123/20260515000186/11013.htm) | 테스트 소켓 사업 구조와 공시 실적 비교 |
-| `R15` | B/C | [테크윙 2026 IR Book](https://kind.krx.co.kr/external/dst/irReference/18865/TechWing%20IR%20Book%201Q26.pdf) | 회사 주장 기준 HBM 검사장비 비교. 양산·수주는 DART로 별도 검증 |
-| `R16` | A/F·C | [FormFactor 2026년 2분기 공식 실적발표](https://investors.formfactor.com/news-releases/news-release-details/formfactor-inc-reports-2026-second-quarter-results) | 공시된 매출·마진·현금흐름은 `F`, 경영진의 HBM 수요 설명은 `C`로 분리해 비교 |
+| `R15` | B/C | [테크윙 2026 IR Book](https://kind.krx.co.kr/external/dst/irReference/18865/TechWing%20IR%20Book%201Q26.pdf) · [2026년 1분기보고서](https://kind.krx.co.kr/external/2026/05/15/001510/20260515003309/11013.htm) | HBM 검사장비·양산·수주에 관한 회사 주장은 `C`; 재무 사실은 분기보고서로 교차검증 |
+| `R16` | A/F·C | [FormFactor 2026년 2분기 공식 실적발표](https://investors.formfactor.com/news-releases/news-release-details/formfactor-inc-reports-2026-second-quarter-results) · [2Q26 10-Q](https://www.sec.gov/Archives/edgar/data/1039399/000103939926000033/form-20260627.htm) | 공시된 매출·마진·현금흐름은 `F`, 경영진의 HBM 수요 설명은 `C`; non-GAAP 수치는 별도 표기 |
+
+> **Phase 1 정정 이력:** 기존 `R05`(2026-05-28, 68.99232억원)는 엑시콘이 아닌 **네오셈(253590)**의 공시로 확인돼 폐기했다. 엑시콘의 2026-06-04 120.654억원 계약으로 대체했으며, 과거 오류는 작업로그 `LOG-20260813-010`에 남겼다.
 
 ### 출처 연결 검사
 
