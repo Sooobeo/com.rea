@@ -1,0 +1,16 @@
+# Secrets and local runtime configuration
+.env
+.env.*
+!.env.example
+
+# Downloaded filings and generated raw data
+raw/
+downloads/
+*.zip
+
+# Local caches and Python tooling
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.pyc
