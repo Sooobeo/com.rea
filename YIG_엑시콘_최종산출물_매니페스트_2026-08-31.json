@@ -1,0 +1,802 @@
+{
+  "manifest_version": 1,
+  "generated_at": "2026-08-31T13:47:31+09:00",
+  "project": {
+    "issuer": "엑시콘",
+    "stock_code": "092870",
+    "corp_code": "00611736",
+    "disclosure_cutoff": "2026-08-31T09:50:32+09:00",
+    "market_date": "2026-08-28",
+    "financial_date": "2026-06-30"
+  },
+  "latest_disclosure_gate": {
+    "file": "raw/dart/phase3/gates/20260831T095032+0900/gate_summary.json",
+    "sha256": "6d6d012990dbac44fc35751ef446d92deba72c680dfb238bb3ce6a7bcd290b7e",
+    "bytes": 7306,
+    "status": "000",
+    "row_count": 20,
+    "half_year_count": 1,
+    "new_relevant_count": 0,
+    "termination_or_cancellation_count": 0,
+    "half_year_rcept_no": "20260814001521",
+    "api_key_logged": false
+  },
+  "pipeline_qa": {
+    "phase2": {
+      "manifest": {
+        "file": "raw/dart/normalized/normalization_manifest.json",
+        "sha256": "791ed952d3af46d81244e94883d0bf7f7b3471417c1eefd324211680b1f723a0",
+        "bytes": 1659
+      },
+      "checks": {
+        "file": "raw/dart/normalized/checks.json",
+        "sha256": "24e856e758d7db8f74a3de3a8a689f8f2a9f9bce9c21f56a680708adabb58433",
+        "bytes": 173909
+      },
+      "total": 208,
+      "passed": 208,
+      "failed": 0
+    },
+    "phase3": {
+      "manifest": {
+        "file": "raw/dart/normalized/phase3/runs/20260831T132720+0900/phase3_run_manifest.json",
+        "sha256": "90ce44313dac86c227bac2d5e8b14c5c6fb6c215952d1e321188348f5a31130a",
+        "bytes": 1388
+      },
+      "count": 47,
+      "passed": 47,
+      "failed": 0
+    },
+    "phase4": {
+      "manifest": {
+        "file": "raw/dart/normalized/phase4/runs/20260831T132735+0900/phase4_run_manifest.json",
+        "sha256": "d257764e3d05af991f0b3934f84bcc7f1824abdf1c6fbca67b90dcaebd820db2",
+        "bytes": 2937
+      },
+      "count": 138,
+      "passed": 138,
+      "failed": 0
+    },
+    "phase5_data": {
+      "manifest": {
+        "file": "raw/dart/normalized/phase5/runs/20260831T133214+0900/phase5_run_manifest.json",
+        "sha256": "6506604145546ebbd511de6097d21f974b15f2b2aecf4154d72fba8ed6ead7d3",
+        "bytes": 2976
+      },
+      "total": 132,
+      "passed": 132,
+      "failed": 0
+    },
+    "phase5_render": {
+      "manifest": {
+        "file": "raw/dart/normalized/phase5/runs/20260831T133214+0900/phase5_render_manifest.json",
+        "sha256": "b76ef01e148ecdd5c1d15c13b81d83e9b1a40997322f0b8e767e71e7d7271a99",
+        "bytes": 20301
+      },
+      "total": 77,
+      "passed": 77,
+      "failed": 0,
+      "rows": [
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-height",
+          "passed": true,
+          "actual": 1278,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-bytes",
+          "passed": true,
+          "actual": 270678,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v01_demand_to_revenue_evidence_path.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-height",
+          "passed": true,
+          "actual": 1332,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-bytes",
+          "passed": true,
+          "actual": 308219,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v02_test_value_chain_position.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-width",
+          "passed": true,
+          "actual": 2736,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-height",
+          "passed": true,
+          "actual": 1404,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-bytes",
+          "passed": true,
+          "actual": 352381,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-a4-core-font",
+          "passed": true,
+          "actual": 7.800000000000001,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v03_product_mix_ofs.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-height",
+          "passed": true,
+          "actual": 1890,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-bytes",
+          "passed": true,
+          "actual": 292689,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v04_quarterly_revenue_opm_cfs.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-height",
+          "passed": true,
+          "actual": 1890,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-bytes",
+          "passed": true,
+          "actual": 357328,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v05_working_capital_ocf_cfs.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-height",
+          "passed": true,
+          "actual": 1890,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-bytes",
+          "passed": true,
+          "actual": 275300,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v06_contract_timeline_recognition_U.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-height",
+          "passed": true,
+          "actual": 1476,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-bytes",
+          "passed": true,
+          "actual": 309159,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v07_actual_contract_recognition_bridge.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-width",
+          "passed": true,
+          "actual": 2790,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-height",
+          "passed": true,
+          "actual": 1350,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-bytes",
+          "passed": true,
+          "actual": 192625,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v08_evidence_scenario_state.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-width",
+          "passed": true,
+          "actual": 2790,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-height",
+          "passed": true,
+          "actual": 1508,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-bytes",
+          "passed": true,
+          "actual": 318439,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v09_counterfactual_contract_opm.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-width",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-height",
+          "passed": true,
+          "actual": 1710,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-bytes",
+          "passed": true,
+          "actual": 278301,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-a4-core-font",
+          "passed": true,
+          "actual": 7.799999999999999,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v10_market_value_expectation_gate.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-width",
+          "passed": true,
+          "actual": 3060,
+          "expected_min": 1800
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-height",
+          "passed": true,
+          "actual": 2880,
+          "expected_min": 850
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-bytes",
+          "passed": true,
+          "actual": 520441,
+          "expected_min": 50000
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-a4-core-font",
+          "passed": true,
+          "actual": 7.800000000000001,
+          "expected_min": 7.8
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-a4-source-font",
+          "passed": true,
+          "actual": 6.7,
+          "expected_min": 6.7
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-text-clipping",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "check": "05_v11_risk_monitoring_matrix.png-text-overlap",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        }
+      ],
+      "figure_count": 11
+    },
+    "manual_visual_qa": {
+      "record": {
+        "file": "raw/dart/normalized/phase5/runs/20260831T133214+0900/phase5_manual_visual_qa.json",
+        "sha256": "b62206db69fcdfdf9b300e63097dde112687fbffa0a5fea5a5ee9cff11f85cd4",
+        "bytes": 1592
+      },
+      "status": "passed",
+      "figures_reviewed": 11,
+      "unresolved_visual_defects": 0
+    }
+  },
+  "evidence_state_corrections": {
+    "2026Q2_income_statement": "F - R17 directly reported 3-month columns",
+    "2026Q2_operating_cash_flow": "E - H1 cumulative minus Q1 cumulative",
+    "2026H1_soc_share": "F - disclosed 0.0%",
+    "2026H1_soc_amount": "E - source cell blank; zero inferred by total reconciliation",
+    "contract_recognition": "U - contract-level acceptance and revenue attribution not disclosed"
+  },
+  "deliverables": [
+    {
+      "file": "03_엑시콘_기업분석_보고서.md",
+      "sha256": "f532ecdbbf0e346d7d2608621e78ce95e380c4df45a9efb545d5aab04abfd61c",
+      "bytes": 19078
+    },
+    {
+      "file": "output/pdf/03_엑시콘_기업분석_보고서.pdf",
+      "sha256": "a45e853e7bd48779a1ba961fc8573805d349074d0d1897b1f0e8e4b3f3b6d00e",
+      "bytes": 3635395
+    },
+    {
+      "file": "05_엑시콘_Phase5_시각화_검증.md",
+      "sha256": "f2bbe3439d0086818bcd346b5b651b4a1321c0cd65297c77c722af2dcacd8dd7",
+      "bytes": 9565
+    },
+    {
+      "file": "05_엑시콘_분석한계와_업데이트체크리스트.md",
+      "sha256": "39a3f8f1e97e1b4a8b52a35ec6aee45474c6928628b36fc02fef28e1a5bbb71c",
+      "bytes": 33032
+    },
+    {
+      "file": "YIG_엑시콘_프로젝트_결과보고서_2026-08-31.md",
+      "sha256": "2a70714f1fdd0dd75629ce0a1b90e4934783da0c28fdb4a540e6811048e1bddf",
+      "bytes": 8973
+    },
+    {
+      "file": "YIG_엑시콘_기업분석_보고서_구현계획서.md",
+      "sha256": "785ef79482bbc83546f87931cb9eba78a8561dea296094d6a204b54ce53db575",
+      "bytes": 50034
+    },
+    {
+      "file": "YIG_엑시콘_기업분석_작업로그.md",
+      "sha256": "ca7ba19382020377473d434a4d8c562c5652836f985dd1fa7d2ac26178373fc8",
+      "bytes": 79698
+    },
+    {
+      "file": "requirements-chartpack.txt",
+      "sha256": "9e9b921542e94b3175026bc82d1527433485adb39b1187d681bab81fa56fb43a",
+      "bytes": 236
+    },
+    {
+      "file": "requirements-report.txt",
+      "sha256": "9c7d99c1afcda5f9222324009c229f6125f1fe26cc36c4818e4f33e22d7d8fd6",
+      "bytes": 93
+    }
+  ],
+  "figures": [
+    {
+      "file": "figures/05_v01_demand_to_revenue_evidence_path.png",
+      "sha256": "d8e4e2786caebf19887e4f5328452a6bba17fab5cae0430f537efc286a517812",
+      "width": 2880,
+      "height": 1278,
+      "bytes": 270678,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v02_test_value_chain_position.png",
+      "sha256": "5b88a5b5fa7d7ea0994416d8cf024f6d02cdf6b74610ee56894284a9c741b176",
+      "width": 2880,
+      "height": 1332,
+      "bytes": 308219,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v03_product_mix_ofs.png",
+      "sha256": "8d61062fe030cd3cf0c0cbe6bcfb1cf55da37d45d373a472ef35790382ce78aa",
+      "width": 2736,
+      "height": 1404,
+      "bytes": 352381,
+      "layout_audit": {
+        "a4_scale": 0.46104434314131787,
+        "min_core_font_pt_at_178mm": 7.800000000000001,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v04_quarterly_revenue_opm_cfs.png",
+      "sha256": "43a02897b7e1464f9986b513b2a8845644ab90a12cc3f2e13af4752c3ad0d815",
+      "width": 2880,
+      "height": 1890,
+      "bytes": 292689,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v05_working_capital_ocf_cfs.png",
+      "sha256": "207547bd037eb1d0ffc062f4ea36f260c44991a3db44d665f0261734024f6956",
+      "width": 2880,
+      "height": 1890,
+      "bytes": 357328,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v06_contract_timeline_recognition_U.png",
+      "sha256": "c89e45ec295f4002685b0c79253691facef42a971b3303c736ef15b472144a0d",
+      "width": 2880,
+      "height": 1890,
+      "bytes": 275300,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v07_actual_contract_recognition_bridge.png",
+      "sha256": "7c6e00ac842a3d4b9bc4e47c343a01c5fce299acc2c71ecbbf32c189de875645",
+      "width": 2880,
+      "height": 1476,
+      "bytes": 309159,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v08_evidence_scenario_state.png",
+      "sha256": "497a8d0031a779efd94ce6b77e8719a46358ed5f13abcaf5b824b5fa9089d7de",
+      "width": 2790,
+      "height": 1350,
+      "bytes": 192625,
+      "layout_audit": {
+        "a4_scale": 0.4521209042418085,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v09_counterfactual_contract_opm.png",
+      "sha256": "57444e4ce6cadd8d14a56294c3949288753dd0b5252ef7ba815a9eb908dbb7d4",
+      "width": 2790,
+      "height": 1508,
+      "bytes": 318439,
+      "layout_audit": {
+        "a4_scale": 0.4521209042418085,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v10_market_value_expectation_gate.png",
+      "sha256": "345d5334de3dfe1f75f854daa865ecfc83216f1f9c93fa72e6479838776fe784",
+      "width": 2880,
+      "height": 1710,
+      "bytes": 278301,
+      "layout_audit": {
+        "a4_scale": 0.43799212598425197,
+        "min_core_font_pt_at_178mm": 7.799999999999999,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    },
+    {
+      "file": "figures/05_v11_risk_monitoring_matrix.png",
+      "sha256": "b6c3015c09cf999aea5b545324c899d10b4355df0bc872ea186a4d32fef9b691",
+      "width": 3060,
+      "height": 2880,
+      "bytes": 520441,
+      "layout_audit": {
+        "a4_scale": 0.412227883279296,
+        "min_core_font_pt_at_178mm": 7.800000000000001,
+        "min_source_font_pt_at_178mm": 6.7,
+        "clipped_text_count": 0,
+        "clipped_text": [],
+        "overlap_count": 0,
+        "overlaps": []
+      }
+    }
+  ],
+  "xlsx_deliverables": {
+    "status": "blocked",
+    "reason": "Required @oai/artifact-tool/load_workspace_dependencies runtime is not enabled; prohibited fallback spreadsheet libraries were not used.",
+    "rechecked_on": "2026-08-31",
+    "files_not_created": [
+      "01_엑시콘_소스로그.xlsx",
+      "02_엑시콘_분석모델.xlsx",
+      "04_엑시콘_차트데이터.xlsx"
+    ]
+  },
+  "security": {
+    "api_keys_logged": false,
+    "secret_values_in_manifest": false
+  }
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
@@ -60,6 +61,49 @@ def latest_gate_summary() -> Path:
     if not candidates:
         raise FileNotFoundError("No OpenDART gate summary found")
     return candidates[-1]
+
+
+def resolve_input(path: Path) -> Path:
+    candidate = path if path.is_absolute() else ROOT / path
+    candidate = candidate.resolve()
+    if not candidate.is_file():
+        raise FileNotFoundError(f"Input file not found: {candidate}")
+    return candidate
+
+
+def project_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def half_year_xml_from_gate(gate: dict[str, Any]) -> Path:
+    filings = gate.get("half_year_filings") or []
+    if len(filings) != 1:
+        raise ValueError(f"Expected exactly one half-year filing in the gate, found {len(filings)}")
+    rcept_no = str(filings[0]["rcept_no"])
+    return ROOT / "raw" / "dart" / "documents" / "extracted" / rcept_no / f"{rcept_no}.xml"
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build Phase 4 models with optional pinned Phase 2/3, market, gate and XML inputs."
+    )
+    parser.add_argument("--financial-rows", type=Path, help="Normalized financial-row JSON.")
+    parser.add_argument("--share-rows", type=Path, help="Normalized share-row JSON.")
+    parser.add_argument("--contracts", type=Path, help="Normalized contract-ledger JSON.")
+    parser.add_argument("--phase3-history", type=Path, help="Pinned Phase 3 historical-quarter JSON.")
+    parser.add_argument("--phase3-contract", type=Path, help="Pinned Phase 3 contract-evidence JSON.")
+    parser.add_argument("--market-snapshot", type=Path, help="Pinned market-snapshot JSON.")
+    parser.add_argument("--gate-summary", type=Path, help="Pinned latest-disclosure gate JSON.")
+    parser.add_argument("--latest-periodic-xml", type=Path, help="Pinned latest half-year XML.")
+    parser.add_argument("--audit-xml", type=Path, help="Pinned annual-report audit XML.")
+    parser.add_argument(
+        "--run-id",
+        help="Output run directory name. Defaults to the current KST timestamp.",
+    )
+    return parser.parse_args()
 
 
 def ratio(numerator: int | float | None, denominator: int | float | None) -> float | None:
@@ -150,25 +194,42 @@ def build_margin_history(
         previous = cumulative.get((year, previous_period)) if previous_period else None
         values: dict[str, int | float | None] = {}
         formulas: dict[str, str] = {}
+        classifications: dict[str, str] = {}
         for metric in FLOW_ACCOUNT_IDS:
             current_value = current["values"][metric]
             if previous is None:
                 values[metric] = current_value
-                formulas[metric] = f"{period} cumulative"
+                formulas[metric] = f"{period} directly reported"
+                classifications[metric] = "F"
+            elif period in {"H1", "Q3"}:
+                direct_value = selected[(year, period, metric)]["numeric"].get("thstrm_amount")
+                if direct_value is None:
+                    previous_value = previous["values"][metric]
+                    values[metric] = (
+                        None if current_value is None or previous_value is None else current_value - previous_value
+                    )
+                    formulas[metric] = f"{period} cumulative - {previous_period} cumulative"
+                    classifications[metric] = "E"
+                else:
+                    values[metric] = direct_value
+                    formulas[metric] = f"{period} directly reported 3-month amount"
+                    classifications[metric] = "F"
             else:
                 previous_value = previous["values"][metric]
                 values[metric] = None if current_value is None or previous_value is None else current_value - previous_value
                 formulas[metric] = f"{period} cumulative - {previous_period} cumulative"
+                classifications[metric] = "E"
         row = {
             "quarter": quarter,
             "year": year,
             "quarter_number": quarter_number,
             "basis": "CFS",
-            "classification": "F inputs; E quarter subtraction and ratios",
+            "classification": "F directly reported quarter inputs; E Q4 subtraction and ratios",
             "unit": "KRW",
             "source_period": period,
             "flow_values": values,
             "formulas": formulas,
+            "flow_classifications": classifications,
             "sources": current["sources"],
             "previous_period_sources": previous["sources"] if previous else None,
             "derived": {
@@ -212,34 +273,59 @@ def build_margin_history(
             )
         )
 
-    for year in (2023, 2024, 2025):
+    for year in sorted({row["year"] for row in independent_rows}):
         year_rows = sorted((row for row in independent_rows if row["year"] == year), key=lambda row: row["quarter_number"])
-        if len(year_rows) != 4:
-            continue
+        by_quarter_number = {row["quarter_number"]: row for row in year_rows}
         for metric in FLOW_ACCOUNT_IDS:
-            q = [row["flow_values"][metric] for row in year_rows]
-            expected_h1 = cumulative[(year, "H1")]["values"][metric]
-            expected_9m = cumulative[(year, "Q3")]["values"][metric]
-            expected_fy = cumulative[(year, "FY")]["values"][metric]
-            checks.extend(
-                [
-                    make_check(f"MARGIN-H1-{year}-{metric}", "margin_quarterization", q[0] + q[1], expected_h1),
-                    make_check(f"MARGIN-9M-{year}-{metric}", "margin_quarterization", q[0] + q[1] + q[2], expected_9m),
-                    make_check(f"MARGIN-FY-{year}-{metric}", "margin_quarterization", sum(q), expected_fy),
-                ]
-            )
+            if (year, "H1") in cumulative and {1, 2}.issubset(by_quarter_number):
+                checks.append(
+                    make_check(
+                        f"MARGIN-H1-{year}-{metric}",
+                        "margin_quarterization",
+                        sum(by_quarter_number[q]["flow_values"][metric] for q in (1, 2)),
+                        cumulative[(year, "H1")]["values"][metric],
+                    )
+                )
+            if (year, "Q3") in cumulative and {1, 2, 3}.issubset(by_quarter_number):
+                checks.append(
+                    make_check(
+                        f"MARGIN-9M-{year}-{metric}",
+                        "margin_quarterization",
+                        sum(by_quarter_number[q]["flow_values"][metric] for q in (1, 2, 3)),
+                        cumulative[(year, "Q3")]["values"][metric],
+                    )
+                )
+            if (year, "FY") in cumulative and {1, 2, 3, 4}.issubset(by_quarter_number):
+                checks.append(
+                    make_check(
+                        f"MARGIN-FY-{year}-{metric}",
+                        "margin_quarterization",
+                        sum(by_quarter_number[q]["flow_values"][metric] for q in (1, 2, 3, 4)),
+                        cumulative[(year, "FY")]["values"][metric],
+                    )
+                )
 
     by_quarter = {row["quarter"]: row for row in independent_rows}
     fy2025 = cumulative[(2025, "FY")]["values"]
+    latest_quarter = independent_rows[-1]["quarter"]
     reference_states = [
         {
-            "state_id": "LATEST_Q1_STRESS",
-            "label": "latest low-throughput observation",
+            "state_id": "LATEST_REPORTED_QUARTER",
+            "label": "latest reported quarter observation",
+            "period": latest_quarter,
+            "values": by_quarter[latest_quarter]["flow_values"],
+            "gross_margin": by_quarter[latest_quarter]["derived"]["gross_margin"],
+            "operating_margin": by_quarter[latest_quarter]["derived"]["operating_margin"],
+            "classification": "F/E historical observation, not a forecast",
+        },
+        {
+            "state_id": "Q1_2026_LOW_THROUGHPUT",
+            "label": "2026 Q1 low-throughput stress observation",
             "period": "2026Q1",
             "values": by_quarter["2026Q1"]["flow_values"],
             "gross_margin": by_quarter["2026Q1"]["derived"]["gross_margin"],
             "operating_margin": by_quarter["2026Q1"]["derived"]["operating_margin"],
-            "classification": "F/E historical observation, not a forecast",
+            "classification": "F/E historical downside observation, not a forecast",
         },
         {
             "state_id": "FY2025_TRANSITION",
@@ -267,7 +353,7 @@ def build_margin_history(
         "title": "Exicon CFS independent-quarter margin drivers",
         "method": {
             "basis": "CFS only",
-            "quarterization": "Q1 direct; Q2=H1-Q1; Q3=9M-H1; Q4=FY-9M",
+            "quarterization": "Q1 direct; Q2/H1 and Q3/9M use directly reported 3-month columns when present; Q4=FY-9M",
             "gross_profit_identity": "revenue - cost of sales",
             "operating_income_identity": "gross profit - selling, general and administrative expenses",
             "unknown_handling": "Missing values remain null and are never converted to zero",
@@ -296,11 +382,41 @@ def build_contract_and_scenarios(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     checks: list[dict[str, Any]] = []
     evidence_by_original = {row["original_rcept_no"]: row for row in contract_evidence["contracts"]}
+    h1_order_context = {
+        ("R03",): {
+            "order_total_krw": 30_200_000_000,
+            "delivered_disclosed_krw": 16_000_000_000,
+            "backlog_disclosed_krw": 14_200_000_000,
+            "sales_supply_rounded_krw": 16_000_000_000,
+            "cash_received_rounded_krw": 16_000_000_000,
+        },
+        ("R04", "R07"): {
+            "order_total_krw": 9_686_000_000,
+            "delivered_disclosed_krw": 1_203_000_000,
+            "backlog_disclosed_krw": 8_483_000_000,
+            "sales_supply_rounded_krw": 1_200_000_000,
+            "cash_received_rounded_krw": 1_200_000_000,
+        },
+        ("R05",): {
+            "order_total_krw": 12_065_000_000,
+            "delivered_disclosed_krw": 0,
+            "backlog_disclosed_krw": 12_065_000_000,
+            "sales_supply_rounded_krw": 0,
+            "cash_received_rounded_krw": 0,
+        },
+        ("R06",): {
+            "order_total_krw": 49_850_000_000,
+            "delivered_disclosed_krw": 0,
+            "backlog_disclosed_krw": 49_850_000_000,
+            "sales_supply_rounded_krw": 0,
+            "cash_received_rounded_krw": 0,
+        },
+    }
     contract_states: list[dict[str, Any]] = []
     for contract in contracts["latest_contracts"]:
         evidence = evidence_by_original[contract["original_rcept_no"]]
         is_board_revision = set(contract["source_ids"]) == {"R04", "R07"}
-        has_delivery_context = contract["source_ids"] == ["R03"]
+        order_context = h1_order_context.get(tuple(contract["source_ids"]))
         state = {
             "source_ids": contract["source_ids"],
             "original_rcept_no": contract["original_rcept_no"],
@@ -311,10 +427,19 @@ def build_contract_and_scenarios(
             "contract_validity_status": "valid-no-cancellation-at-cutoff",
             "schedule_status": "revised-end-date" if is_board_revision else "latest-disclosed-period",
             "delivery_context": {
-                "status": "reported-in-order-table" if has_delivery_context else "not-linked",
-                "reported_amount_krw": 8_000_000_000 if has_delivery_context else None,
-                "source_id": "R01" if has_delivery_context else None,
-                "warning": "Delivery is not customer acceptance or revenue recognition evidence." if has_delivery_context else None,
+                "status": "reported-in-2026-h1-order-table" if order_context is not None else "not-linked",
+                "order_total_krw": order_context["order_total_krw"] if order_context else None,
+                "reported_amount_krw": order_context["delivered_disclosed_krw"] if order_context else None,
+                "backlog_disclosed_krw": order_context["backlog_disclosed_krw"] if order_context else None,
+                "sales_supply_rounded_krw": order_context["sales_supply_rounded_krw"] if order_context else None,
+                "cash_received_rounded_krw": order_context["cash_received_rounded_krw"] if order_context else None,
+                "report_scope": "post-balance-sheet-inclusive; the filing table includes the 2026-07-07 contract"
+                if order_context is not None
+                else None,
+                "source_id": "R17" if order_context is not None else None,
+                "warning": "The delivery-table amount is not customer acceptance or contract-level revenue-recognition evidence."
+                if order_context is not None
+                else None,
             },
             "acceptance_or_customer_signoff_evidence": evidence["acceptance_or_customer_signoff_evidence"],
             "revenue_recognition_evidence": evidence["revenue_recognition_evidence"],
@@ -328,17 +453,25 @@ def build_contract_and_scenarios(
     latest = phase3_history["rows"][-1]
     previous = phase3_history["rows"][-2]
     inventory_increased = latest["period_end_values"]["inventory"] > previous["period_end_values"]["inventory"]
-    ocf_worsened = latest["flow_values"]["operating_cash_flow"] < previous["flow_values"]["operating_cash_flow"]
+    receivables_increased = (
+        latest["period_end_values"]["trade_and_other_current_receivables"]
+        > previous["period_end_values"]["trade_and_other_current_receivables"]
+    )
+    ocf_negative = latest["flow_values"]["operating_cash_flow"] < 0
+    cash_conversion_warning = inventory_increased and receivables_increased and ocf_negative
+    actual_2026_rows = [row for row in phase3_history["rows"] if row["year"] == 2026]
+    reported_2026_revenue = sum(row["flow_values"]["revenue"] for row in actual_2026_rows)
 
     forecast = {
         "period": "2026FY",
         "status": "U",
-        "classification": "F actual through 2026Q1; U for unreported periods and contract recognition",
+        "actual_through_period": latest["quarter"],
+        "classification": f"F actual through {latest['quarter']}; U for unreported periods and contract recognition",
         "formula": "reported 2026 CFS revenue + officially confirmed post-period contract revenue + officially confirmed other revenue + U",
         "components": {
-            "reported_cfs_revenue_through_2026q1_krw": latest["flow_values"]["revenue"],
+            "reported_cfs_revenue_through_latest_actual_krw": reported_2026_revenue,
             "unreported_existing_business_revenue_krw": None,
-            "officially_confirmed_contract_revenue_after_2026q1_krw": None,
+            "officially_confirmed_contract_revenue_after_latest_actual_krw": None,
             "officially_confirmed_other_revenue_krw": None,
             "forecast_total_revenue_krw": None,
             "forecast_gross_profit_krw": None,
@@ -383,8 +516,8 @@ def build_contract_and_scenarios(
             "probability": None,
             "entry_evidence": {
                 "contract_specific_schedule_warning": "active for R04+R07 because the official end date was extended",
-                "cash_conversion_warning": "active because inventory rose while OCF weakened from 2025Q4 to 2026Q1",
-                "enterprise_case": "not quantified without contract-level impact or a new half-year filing",
+                "cash_conversion_warning": "active because inventory and receivables rose from 2026Q1 to 2026Q2 while Q2 OCF remained negative",
+                "enterprise_case": "not quantified without contract-level acceptance or recognized-revenue evidence",
             },
             "calculation_rule": "Defer or remove only the amount officially linked to a delay, reduction or cancellation; use actual margin and cash-flow deterioration without an arbitrary haircut.",
             "numeric_output": None,
@@ -399,7 +532,12 @@ def build_contract_and_scenarios(
             "observed_operating_margin": state_by_id[anchor_id]["operating_margin"],
             "classification": state_by_id[anchor_id]["classification"],
         }
-        for anchor_id in ("LATEST_Q1_STRESS", "FY2025_TRANSITION", "Q4_2025_HIGH_DELIVERY")
+        for anchor_id in (
+            "LATEST_REPORTED_QUARTER",
+            "Q1_2026_LOW_THROUGHPUT",
+            "FY2025_TRANSITION",
+            "Q4_2025_HIGH_DELIVERY",
+        )
     ]
     new_contracts = [row for row in contract_states if next(c for c in contracts["latest_contracts"] if c["original_rcept_no"] == row["original_rcept_no"])["is_new_2026_contract"]]
     contract_value_cases = [
@@ -453,14 +591,32 @@ def build_contract_and_scenarios(
             make_check("SCENARIO-PROBABILITIES-UNASSIGNED", "scenario", all(row["probability"] is None for row in scenarios), True),
             make_check("BASE-NUMERIC-OUTPUT-UNASSIGNED", "scenario", scenarios[1]["numeric_output"], None),
             make_check("SENSITIVITY-LABEL", "sensitivity", sensitivity["status"], "counterfactual-only"),
-            make_check("WORKING-CAPITAL-WARNING", "scenario", inventory_increased and ocf_worsened, True),
+            make_check(
+                "H1-ORDER-TOTAL-CONTEXT",
+                "contract_state",
+                sum(row["order_total_krw"] for row in h1_order_context.values()),
+                101_801_000_000,
+            ),
+            make_check(
+                "H1-DELIVERY-CONTEXT-TOTAL",
+                "contract_state",
+                sum(row["delivered_disclosed_krw"] for row in h1_order_context.values()),
+                17_203_000_000,
+            ),
+            make_check(
+                "H1-BACKLOG-CONTEXT-TOTAL",
+                "contract_state",
+                sum(row["backlog_disclosed_krw"] for row in h1_order_context.values()),
+                84_598_000_000,
+            ),
+            make_check("WORKING-CAPITAL-WARNING", "scenario", cash_conversion_warning, True),
         ]
     )
 
     result = {
         "title": "Exicon conditional forecast and evidence-gated scenarios",
         "revenue_recognition_rule": {
-            "source_ids": ["R01", "R02"],
+            "source_ids": ["R01", "R02", "R17"],
             "rule": "Equipment revenue requires completed installation, testing and inspection plus customer acceptance that the equipment operates as designed.",
             "audit_evidence": "The 2025 CFS auditor identified premature product-revenue recognition and cutoff as a key audit matter.",
             "prohibited_shortcuts": [
@@ -475,7 +631,7 @@ def build_contract_and_scenarios(
         "scenarios": scenarios,
         "counterfactual_sensitivity": sensitivity,
         "next_evidence_gate": {
-            "filing": "2026 half-year report or later periodic report",
+            "filing": "2026 third-quarter report or an earlier contract correction/issuer update",
             "required_checks": [
                 "contract-level inspection/customer acceptance or recognized revenue evidence",
                 "inventory composition and valuation loss",
@@ -488,12 +644,14 @@ def build_contract_and_scenarios(
     return result, checks
 
 
-def select_balance_values(financial_rows: list[dict[str, Any]]) -> tuple[dict[str, int], dict[str, Any]]:
+def select_balance_values(
+    financial_rows: list[dict[str, Any]], source_id: str
+) -> tuple[dict[str, int], dict[str, Any]]:
     reverse_ids = {account_id: metric for metric, account_id in BALANCE_ACCOUNT_IDS.items()}
     values: dict[str, int] = {}
     sources: dict[str, Any] = {}
     for row in financial_rows:
-        if row["source_id"] != "DART-FS-2026-Q1-CFS" or row["raw"].get("sj_div") != "BS":
+        if row["source_id"] != source_id or row["raw"].get("sj_div") != "BS":
             continue
         account_id = row["raw"].get("account_id")
         if account_id not in reverse_ids:
@@ -513,16 +671,18 @@ def select_balance_values(financial_rows: list[dict[str, Any]]) -> tuple[dict[st
     return values, sources
 
 
-def dart_listed_shares(share_rows: list[dict[str, Any]]) -> tuple[int, dict[str, Any]]:
+def dart_listed_shares(
+    share_rows: list[dict[str, Any]], source_id: str
+) -> tuple[int, dict[str, Any]]:
     candidates = [
         row
         for row in share_rows
-        if row["source_id"] == "DART-STOCK_TOTAL-2026-Q1"
+        if row["source_id"] == source_id
         and row["dataset"] == "stock_total"
         and row["raw"].get("se") == "합계"
     ]
     if len(candidates) != 1:
-        raise ValueError(f"Expected one 2026Q1 DART stock-total row, got {len(candidates)}")
+        raise ValueError(f"Expected one {source_id} DART stock-total row, got {len(candidates)}")
     row = candidates[0]
     return int(row["numeric"]["istc_totqy"]), {
         "source_id": row["source_id"],
@@ -543,8 +703,12 @@ def build_market_and_peers(
     close = int(official["close_krw"])
     listed_shares = int(official["listed_shares"])
     market_cap = close * listed_shares
-    dart_shares, dart_share_source = dart_listed_shares(share_rows)
-    balance, balance_sources = select_balance_values(financial_rows)
+    history_rows = phase3_history["rows"]
+    latest = history_rows[-1]
+    latest_financial_source_id = latest["source_id"]
+    latest_share_source_id = f"DART-STOCK_TOTAL-{latest['year']}-{latest['source_period']}"
+    dart_shares, dart_share_source = dart_listed_shares(share_rows, latest_share_source_id)
+    balance, balance_sources = select_balance_values(financial_rows, latest_financial_source_id)
 
     net_cash = (
         balance["cash_and_cash_equivalents"]
@@ -554,14 +718,25 @@ def build_market_and_peers(
     )
     enterprise_value = market_cap - net_cash
 
-    rows = {row["quarter"]: row for row in phase3_history["rows"]}
-    ltm_quarters = ["2025Q2", "2025Q3", "2025Q4", "2026Q1"]
+    rows = {row["quarter"]: row for row in history_rows}
+    ltm_quarters = [row["quarter"] for row in history_rows[-4:]]
     ltm_revenue = sum(rows[quarter]["flow_values"]["revenue"] for quarter in ltm_quarters)
     ltm_operating_income = sum(rows[quarter]["flow_values"]["operating_income"] for quarter in ltm_quarters)
     fy2025_revenue = sum(rows[quarter]["flow_values"]["revenue"] for quarter in ("2025Q1", "2025Q2", "2025Q3", "2025Q4"))
     fy2025_operating_income = sum(rows[quarter]["flow_values"]["operating_income"] for quarter in ("2025Q1", "2025Q2", "2025Q3", "2025Q4"))
-    ltm_revenue_formula_check = fy2025_revenue + rows["2026Q1"]["flow_values"]["revenue"] - rows["2025Q1"]["flow_values"]["revenue"]
-    ltm_oi_formula_check = fy2025_operating_income + rows["2026Q1"]["flow_values"]["operating_income"] - rows["2025Q1"]["flow_values"]["operating_income"]
+    latest_quarter_number = latest["quarter_number"]
+    current_ytd = [row for row in history_rows if row["year"] == latest["year"] and row["quarter_number"] <= latest_quarter_number]
+    prior_ytd = [row for row in history_rows if row["year"] == latest["year"] - 1 and row["quarter_number"] <= latest_quarter_number]
+    ltm_revenue_formula_check = (
+        fy2025_revenue
+        + sum(row["flow_values"]["revenue"] for row in current_ytd)
+        - sum(row["flow_values"]["revenue"] for row in prior_ytd)
+    )
+    ltm_oi_formula_check = (
+        fy2025_operating_income
+        + sum(row["flow_values"]["operating_income"] for row in current_ytd)
+        - sum(row["flow_values"]["operating_income"] for row in prior_ytd)
+    )
 
     valuation = {
         "market_date": market_snapshot["trade_date"],
@@ -569,7 +744,7 @@ def build_market_and_peers(
         "listed_shares": listed_shares,
         "market_cap_krw": market_cap,
         "share_count_rule": "Use total listed shares for KRX market capitalization, not free-float shares.",
-        "balance_sheet_date": "2026-03-31",
+        "balance_sheet_date": latest["quarter_end"],
         "net_cash_bridge": {
             "cash_and_cash_equivalents_krw": balance["cash_and_cash_equivalents"],
             "short_term_deposits_krw": balance["short_term_deposits"],
@@ -581,16 +756,16 @@ def build_market_and_peers(
         },
         "enterprise_value_krw": enterprise_value,
         "enterprise_value_formula": "market capitalization - net cash",
-        "ltm_period": "2025Q2-2026Q1",
+        "ltm_period": f"{ltm_quarters[0]}-{ltm_quarters[-1]}",
         "ltm_revenue_krw": ltm_revenue,
         "ltm_operating_income_krw": ltm_operating_income,
         "self_diagnostic_multiples": {
             "ev_to_ltm_sales": ratio(enterprise_value, ltm_revenue),
             "ev_to_ltm_operating_income": ratio(enterprise_value, ltm_operating_income),
-            "market_cap_to_2026q1_equity": ratio(market_cap, balance["equity"]),
+            "market_cap_to_latest_equity": ratio(market_cap, balance["equity"]),
             "classification": "E current-price diagnostics, not fair value or a target price",
         },
-        "time_mismatch_warning": "The market price is at 2026-08-13 while net cash and LTM financials end at 2026-03-31.",
+        "time_mismatch_warning": f"The market price is at {market_snapshot['trade_date']} while net cash and LTM financials end at {latest['quarter_end']}.",
     }
 
     peers = [
@@ -625,7 +800,7 @@ def build_market_and_peers(
         "selected_comparable_ev_to_operating_income_multiple": None,
         "required_operating_income_krw": None,
         "target_price_krw": None,
-        "interpretation": "Because LTM operating profit depends heavily on one high-delivery quarter and current contract recognition is U, the market value implies reliance on future execution rather than only the current trailing run rate.",
+        "interpretation": "The latest reported quarter returned to operating profit, but LTM profit still includes one unusually high-delivery quarter and contract-level recognition remains U; current market value therefore still depends on future execution and cash conversion.",
     }
 
     checks.extend(
@@ -666,20 +841,32 @@ def build_market_and_peers(
 
 
 def main() -> int:
+    args = parse_args()
     generated_at = datetime.now(KST)
-    run_id = generated_at.strftime("%Y%m%dT%H%M%S%z")
+    run_id = args.run_id or generated_at.strftime("%Y%m%dT%H%M%S%z")
     run_dir = PHASE4_RUNS / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
 
-    financial_path = NORMALIZED / "financial_rows.json"
-    share_path = NORMALIZED / "share_rows.json"
-    contracts_path = NORMALIZED / "contracts.json"
-    phase3_history_path = latest_file(NORMALIZED / "phase3" / "runs", "historical_independent_quarters_cfs.json")
-    phase3_contract_path = phase3_history_path.parent / "contract_timing_evidence.json"
-    market_path = latest_file(MARKET_RUNS, "market_snapshot.json")
-    gate_path = latest_gate_summary()
-    q1_xml_path = ROOT / "raw" / "dart" / "documents" / "extracted" / "20260515001551" / "20260515001551.xml"
-    audit_xml_path = ROOT / "raw" / "dart" / "documents" / "extracted" / "20260316001681" / "20260316001681_00761.xml"
+    financial_path = resolve_input(args.financial_rows or NORMALIZED / "financial_rows.json")
+    share_path = resolve_input(args.share_rows or NORMALIZED / "share_rows.json")
+    contracts_path = resolve_input(args.contracts or NORMALIZED / "contracts.json")
+    phase3_history_path = resolve_input(
+        args.phase3_history
+        or latest_file(NORMALIZED / "phase3" / "runs", "historical_independent_quarters_cfs.json")
+    )
+    phase3_contract_path = resolve_input(
+        args.phase3_contract or phase3_history_path.parent / "contract_timing_evidence.json"
+    )
+    market_path = resolve_input(args.market_snapshot or latest_file(MARKET_RUNS, "market_snapshot.json"))
+    gate_path = resolve_input(args.gate_summary or latest_gate_summary())
+    gate = read_json(gate_path)
+    latest_periodic_xml_path = resolve_input(
+        args.latest_periodic_xml or half_year_xml_from_gate(gate)
+    )
+    audit_xml_path = resolve_input(
+        args.audit_xml
+        or ROOT / "raw" / "dart" / "documents" / "extracted" / "20260316001681" / "20260316001681_00761.xml"
+    )
 
     financial_rows = read_json(financial_path)
     share_rows = read_json(share_path)
@@ -687,7 +874,6 @@ def main() -> int:
     phase3_history = read_json(phase3_history_path)
     phase3_contract = read_json(phase3_contract_path)
     market_snapshot = read_json(market_path)
-    gate = read_json(gate_path)
 
     margin_history, margin_checks = build_margin_history(financial_rows, phase3_history)
     conditional_model, contract_checks = build_contract_and_scenarios(
@@ -699,7 +885,7 @@ def main() -> int:
     gate_checks = [
         make_check("GATE-STATUS", "latest_disclosure_gate", gate["status"], "000"),
         make_check("GATE-NEW-RELEVANT", "latest_disclosure_gate", gate["new_relevant_count"], 0),
-        make_check("GATE-HALF-YEAR", "latest_disclosure_gate", gate["half_year_count"], 0),
+        make_check("GATE-HALF-YEAR", "latest_disclosure_gate", gate["half_year_count"], 1),
         make_check(
             "GATE-CANCELLATION",
             "latest_disclosure_gate",
@@ -733,7 +919,7 @@ def main() -> int:
         phase3_contract_path,
         market_path,
         gate_path,
-        q1_xml_path,
+        latest_periodic_xml_path,
         audit_xml_path,
     ]
     manifest = {
@@ -741,10 +927,10 @@ def main() -> int:
         "run_id": run_id,
         "generated_at": generated_at.isoformat(),
         "inputs": [
-            {"path": str(path.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(path)} for path in input_paths
+            {"path": project_path(path), "sha256": sha256(path)} for path in input_paths
         ],
         "outputs": [
-            {"path": str((run_dir / name).relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(run_dir / name)}
+            {"path": project_path(run_dir / name), "sha256": sha256(run_dir / name)}
             for name in outputs
         ],
         "source_hierarchy": {
@@ -764,7 +950,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "run_dir": str(run_dir.relative_to(ROOT)).replace("\\", "/"),
+                "run_dir": project_path(run_dir),
                 "margin_rows": margin_history["row_count"],
                 "contracts": len(conditional_model["contract_states"]),
                 "forecast_status": conditional_model["forecast"]["status"],

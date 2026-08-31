@@ -1,6 +1,6 @@
 param(
     [string]$EnvFile = ".env",
-    [string]$CutoffDate = "20260813"
+    [string]$CutoffDate = "20260831"
 )
 
 $ErrorActionPreference = "Stop"
@@ -185,7 +185,8 @@ $periodMatrix = @(
     @{ year = "2025"; code = "11012"; label = "H1" },
     @{ year = "2025"; code = "11014"; label = "Q3" },
     @{ year = "2025"; code = "11011"; label = "FY" },
-    @{ year = "2026"; code = "11013"; label = "Q1" }
+    @{ year = "2026"; code = "11013"; label = "Q1" },
+    @{ year = "2026"; code = "11012"; label = "H1" }
 )
 
 $periodicReceiptNos = [System.Collections.Generic.List[string]]::new()

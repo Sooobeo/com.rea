@@ -1,8 +1,8 @@
 param(
     [string]$EnvFile = ".env",
     [string]$StartDate = "20260101",
-    [string]$EndDate = "20260813",
-    [string]$BaselineFile = "raw/dart/disclosures_20260101_20260813.json"
+    [string]$EndDate = "20260831",
+    [string]$BaselineFile = "raw/dart/disclosures_20260101_20260831.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -135,7 +135,7 @@ $summary = [ordered]@{
     endpoint = $endpoint
     parameters = $sanitizedParameters
     retrieved_at = $retrievedAt.ToString('yyyy-MM-ddTHH:mm:sszzz')
-    project_cutoff = "2026-08-13T16:00:00+09:00"
+    project_cutoff = $retrievedAt.ToString('yyyy-MM-ddTHH:mm:sszzz')
     status = $response.status
     message = $response.message
     api_call_count = $apiCallCount

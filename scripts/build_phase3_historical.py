@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from datetime import date, datetime, timezone, timedelta
@@ -63,7 +64,52 @@ def latest_gate_summary() -> Path:
     return candidates[-1]
 
 
-def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def resolve_input(path: Path) -> Path:
+    candidate = path
+    if not candidate.is_absolute():
+        candidate = ROOT / candidate
+    candidate = candidate.resolve()
+    if not candidate.is_file():
+        raise FileNotFoundError(f"Input file not found: {candidate}")
+    return candidate
+
+
+def project_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build Phase 3 historical and contract evidence with optional pinned inputs."
+    )
+    parser.add_argument("--key-financials", type=Path, help="Normalized CFS key-financial JSON.")
+    parser.add_argument("--contracts", type=Path, help="Normalized contract ledger JSON.")
+    parser.add_argument("--gate-summary", type=Path, help="Pinned Phase 3 gate-summary JSON.")
+    parser.add_argument(
+        "--run-id",
+        help="Output run directory name. Defaults to the current KST timestamp.",
+    )
+    return parser.parse_args()
+
+
+def reported_amount(value: Any) -> int | float | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, (int, float)):
+        return value
+    normalized = str(value).replace(",", "").strip()
+    if not normalized:
+        return None
+    return float(normalized) if "." in normalized else int(normalized)
+
+
+def build_historical(
+    key_rows: list[dict[str, Any]], source_path: Path | None = None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_path = source_path or NORMALIZED / "key_financials_cfs.json"
     checks: list[dict[str, Any]] = []
     by_year_period = {(int(row["year"]), str(row["period"])): row for row in key_rows}
     independent_rows: list[dict[str, Any]] = []
@@ -77,12 +123,27 @@ def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], li
         start, end = quarter_dates(year, quarter)
         independent_values: dict[str, int | float | None] = {}
         formulas: dict[str, str] = {}
+        classifications: dict[str, str] = {}
 
         for metric in FLOW_METRICS:
             current_value = source["values"].get(metric)
             if previous_source is None:
                 independent_values[metric] = current_value
-                formulas[metric] = f"{source_period} cumulative"
+                formulas[metric] = f"{source_period} directly reported"
+                classifications[metric] = "F"
+            elif source_period in {"H1", "Q3"} and metric != "operating_cash_flow":
+                direct_value = reported_amount(source["mapping"][metric].get("thstrm_amount_raw"))
+                if direct_value is None:
+                    previous_value = previous_source["values"].get(metric)
+                    independent_values[metric] = (
+                        None if current_value is None or previous_value is None else current_value - previous_value
+                    )
+                    formulas[metric] = f"{source_period} cumulative - {previous_period} cumulative"
+                    classifications[metric] = "E"
+                else:
+                    independent_values[metric] = direct_value
+                    formulas[metric] = f"{source_period} directly reported 3-month amount"
+                    classifications[metric] = "F"
             else:
                 previous_value = previous_source["values"].get(metric)
                 if current_value is None or previous_value is None:
@@ -90,6 +151,7 @@ def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], li
                 else:
                     independent_values[metric] = current_value - previous_value
                 formulas[metric] = f"{source_period} cumulative - {previous_period} cumulative"
+                classifications[metric] = "E"
 
         point_values = {metric: source["values"].get(metric) for metric in POINT_METRICS}
         row = {
@@ -107,6 +169,7 @@ def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], li
             "previous_source_rcept_no": previous_source["rcept_no"] if previous_source else None,
             "flow_values": independent_values,
             "flow_formulas": formulas,
+            "flow_classifications": classifications,
             "period_end_values": point_values,
             "derived": {
                 "operating_margin": ratio(independent_values["operating_income"], independent_values["revenue"]),
@@ -135,23 +198,40 @@ def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], li
 
     for year in sorted({int(row["year"]) for row in key_rows}):
         available = {period: by_year_period.get((year, period)) for period in PERIOD_TO_QUARTER}
-        if not all(available.values()):
-            continue
         quarter_rows = [row for row in independent_rows if row["year"] == year]
         quarter_rows.sort(key=lambda row: row["quarter_number"])
+        by_quarter_number = {row["quarter_number"]: row for row in quarter_rows}
         for metric in FLOW_METRICS:
-            q1 = quarter_rows[0]["flow_values"][metric]
-            q2 = quarter_rows[1]["flow_values"][metric]
-            q3 = quarter_rows[2]["flow_values"][metric]
-            q4 = quarter_rows[3]["flow_values"][metric]
-            expected_h1 = available["H1"]["values"][metric]
-            expected_9m = available["Q3"]["values"][metric]
-            expected_fy = available["FY"]["values"][metric]
-            for name, actual, expected, formula in (
-                ("H1_ROLLUP", q1 + q2, expected_h1, "Q1 + Q2 = H1 cumulative"),
-                ("9M_ROLLUP", q1 + q2 + q3, expected_9m, "Q1 + Q2 + Q3 = 9M cumulative"),
-                ("FY_ROLLUP", q1 + q2 + q3 + q4, expected_fy, "Q1 + Q2 + Q3 + Q4 = FY"),
-            ):
+            rollups: list[tuple[str, int | float, int | float, str]] = []
+            if available["H1"] and {1, 2}.issubset(by_quarter_number):
+                rollups.append(
+                    (
+                        "H1_ROLLUP",
+                        by_quarter_number[1]["flow_values"][metric]
+                        + by_quarter_number[2]["flow_values"][metric],
+                        available["H1"]["values"][metric],
+                        "Q1 + Q2 = H1 cumulative",
+                    )
+                )
+            if available["Q3"] and {1, 2, 3}.issubset(by_quarter_number):
+                rollups.append(
+                    (
+                        "9M_ROLLUP",
+                        sum(by_quarter_number[q]["flow_values"][metric] for q in (1, 2, 3)),
+                        available["Q3"]["values"][metric],
+                        "Q1 + Q2 + Q3 = 9M cumulative",
+                    )
+                )
+            if available["FY"] and {1, 2, 3, 4}.issubset(by_quarter_number):
+                rollups.append(
+                    (
+                        "FY_ROLLUP",
+                        sum(by_quarter_number[q]["flow_values"][metric] for q in (1, 2, 3, 4)),
+                        available["FY"]["values"][metric],
+                        "Q1 + Q2 + Q3 + Q4 = FY",
+                    )
+                )
+            for name, actual, expected, formula in rollups:
                 difference = actual - expected
                 checks.append(
                     {
@@ -170,20 +250,23 @@ def build_historical(key_rows: list[dict[str, Any]]) -> tuple[dict[str, Any], li
         "title": "Exicon CFS independent-quarter historical series",
         "method": {
             "basis": "Consolidated financial statements (CFS) only",
-            "income_statement": "Q1 direct; Q2=H1-Q1; Q3=9M-H1; Q4=FY-9M",
+            "income_statement": "Q1 direct; Q2/H1 and Q3/9M use directly reported 3-month columns when present; Q4=FY-9M",
             "cash_flow_statement": "Q1 direct; Q2=H1-Q1; Q3=9M-H1; Q4=FY-9M",
             "balance_sheet": "Period-end point-in-time values; not differenced",
             "unknown_handling": "Missing values remain null and are not converted to zero",
         },
-        "source_file": "raw/dart/normalized/key_financials_cfs.json",
-        "source_sha256": sha256(NORMALIZED / "key_financials_cfs.json"),
+        "source_file": project_path(source_path),
+        "source_sha256": sha256(source_path),
         "row_count": len(independent_rows),
         "rows": independent_rows,
     }
     return result, checks
 
 
-def build_contract_evidence(contracts: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def build_contract_evidence(
+    contracts: dict[str, Any], source_path: Path | None = None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_path = source_path or NORMALIZED / "contracts.json"
     checks: list[dict[str, Any]] = []
     contract_rows: list[dict[str, Any]] = []
     schedule_rows: list[dict[str, Any]] = []
@@ -291,8 +374,8 @@ def build_contract_evidence(contracts: dict[str, Any]) -> tuple[dict[str, Any], 
             "acceptance_rule": "Without inspection, customer acceptance, or revenue-recognition evidence, contract-level recognized amount is U",
             "schedule_rule": "Quarter overlap is timing context only; active contract amounts may repeat across quarters and are not backlog or revenue",
         },
-        "source_file": "raw/dart/normalized/contracts.json",
-        "source_sha256": sha256(NORMALIZED / "contracts.json"),
+        "source_file": project_path(source_path),
+        "source_sha256": sha256(source_path),
         "summary": {
             "unique_contract_count": len(contract_rows),
             "known_contract_amount_total_krw": total_all,
@@ -310,18 +393,21 @@ def build_contract_evidence(contracts: dict[str, Any]) -> tuple[dict[str, Any], 
 
 
 def main() -> int:
+    args = parse_args()
     generated_at = datetime.now(KST)
-    run_id = generated_at.strftime("%Y%m%dT%H%M%S%z")
+    run_id = args.run_id or generated_at.strftime("%Y%m%dT%H%M%S%z")
     run_dir = PHASE3_ROOT / run_id
-    key_path = NORMALIZED / "key_financials_cfs.json"
-    contracts_path = NORMALIZED / "contracts.json"
-    gate_path = latest_gate_summary()
+    if run_dir.exists():
+        raise FileExistsError(f"Phase 3 run directory already exists: {run_dir}")
+    key_path = resolve_input(args.key_financials or NORMALIZED / "key_financials_cfs.json")
+    contracts_path = resolve_input(args.contracts or NORMALIZED / "contracts.json")
+    gate_path = resolve_input(args.gate_summary or latest_gate_summary())
     key_rows = read_json(key_path)
     contracts = read_json(contracts_path)
     gate = read_json(gate_path)
 
-    historical, historical_checks = build_historical(key_rows)
-    contract_evidence, contract_checks = build_contract_evidence(contracts)
+    historical, historical_checks = build_historical(key_rows, key_path)
+    contract_evidence, contract_checks = build_contract_evidence(contracts, contracts_path)
 
     gate_checks = [
         {
@@ -347,11 +433,11 @@ def main() -> int:
             "check_id": "GATE-HALF-YEAR-FILING",
             "category": "latest_disclosure_gate",
             "actual": gate["half_year_count"],
-            "expected": 0,
-            "difference": gate["half_year_count"],
+            "expected": 1,
+            "difference": gate["half_year_count"] - 1,
             "tolerance": 0,
-            "passed": gate["half_year_count"] == 0,
-            "notes": "This expected value applies to the project cutoff and the 2026-08-13 requery run only.",
+            "passed": gate["half_year_count"] == 1,
+            "notes": "The 2026 half-year filing submitted on 2026-08-14 is included in the refreshed source layer.",
         },
     ]
     checks = gate_checks + historical_checks + contract_checks
@@ -376,13 +462,13 @@ def main() -> int:
         "run_id": run_id,
         "generated_at": generated_at.isoformat(),
         "inputs": [
-            {"path": str(key_path.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(key_path)},
-            {"path": str(contracts_path.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(contracts_path)},
-            {"path": str(gate_path.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(gate_path)},
+            {"path": project_path(key_path), "sha256": sha256(key_path)},
+            {"path": project_path(contracts_path), "sha256": sha256(contracts_path)},
+            {"path": project_path(gate_path), "sha256": sha256(gate_path)},
         ],
         "outputs": [
             {
-                "path": str((run_dir / name).relative_to(ROOT)).replace("\\", "/"),
+                "path": project_path(run_dir / name),
                 "sha256": sha256(run_dir / name),
             }
             for name in outputs
@@ -399,7 +485,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "run_dir": str(run_dir.relative_to(ROOT)).replace("\\", "/"),
+                "run_dir": project_path(run_dir),
                 "historical_rows": historical["row_count"],
                 "contracts": contract_evidence["summary"]["unique_contract_count"],
                 "checks_passed": check_output["passed_count"],

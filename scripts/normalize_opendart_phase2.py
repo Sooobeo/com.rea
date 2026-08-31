@@ -695,8 +695,13 @@ def normalize_contracts(disclosures_2026: list[dict[str, Any]]) -> tuple[dict[st
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     raw_manifest = read_json(RAW / "run_manifest.json")
-    disclosures_all_payload = read_json(RAW / "disclosures_20230101_20260813.json")
-    disclosures_2026_payload = read_json(RAW / "disclosures_20260101_20260813.json")
+    manifest_by_dataset = {
+        str(row.get("dataset")): row for row in raw_manifest.get("datasets", [])
+    }
+    disclosures_all_path = ROOT / manifest_by_dataset["disclosures_all"]["output_file"]
+    disclosures_2026_path = ROOT / manifest_by_dataset["disclosures_2026"]["output_file"]
+    disclosures_all_payload = read_json(disclosures_all_path)
+    disclosures_2026_payload = read_json(disclosures_2026_path)
     disclosures_all = list(disclosures_all_payload.get("list") or [])
     disclosures_2026 = list(disclosures_2026_payload.get("list") or [])
 
@@ -763,20 +768,24 @@ def main() -> int:
         {
             "check_id": "DISCLOSURE-COUNTS",
             "category": "disclosures",
-            "passed": len(disclosures_all) == 119 and len(disclosures_2026) == 19,
+            "passed": (
+                len(disclosures_all) == int(disclosures_all_payload["total_count"])
+                and len(disclosures_2026) == int(disclosures_2026_payload["total_count"])
+            ),
             "details": {
-                "2023_to_cutoff_expected": 119,
+                "2023_to_cutoff_expected": int(disclosures_all_payload["total_count"]),
                 "2023_to_cutoff_actual": len(disclosures_all),
-                "2026_expected": 19,
+                "2026_expected": int(disclosures_2026_payload["total_count"]),
                 "2026_actual": len(disclosures_2026),
             },
         },
         {
             "check_id": "DISCLOSURE-2026-HALF-YEAR",
             "category": "disclosures",
-            "passed": len(half_year_2026) == 0,
+            "passed": len(half_year_2026) == 1,
             "details": {
-                "cutoff": "2026-08-13 16:00 KST",
+                "cutoff": raw_manifest["run"]["cutoff_date"],
+                "expected_half_year_report_count": 1,
                 "half_year_report_count": len(half_year_2026),
                 "latest_periodic_reports": periodic_2026,
             },
