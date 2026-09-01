@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "generated_at": "2026-09-01T11:02:33+09:00",
+  "generated_at": "2026-09-01T13:33:35+09:00",
   "project": {
     "issuer": "엑시콘",
     "stock_code": "092870",
@@ -583,18 +583,18 @@
     },
     {
       "file": "YIG_엑시콘_프로젝트_결과보고서_2026-08-31.md",
-      "sha256": "a01ced91b73c6039919e1d321a1db25dd924ef5c9346e51457a77d6bb570637e",
-      "bytes": 10432
+      "sha256": "f53124a4132940e9053038e08907eb3264e9cb070e2805552cbda15e738913d5",
+      "bytes": 11015
     },
     {
       "file": "YIG_엑시콘_기업분석_보고서_구현계획서.md",
-      "sha256": "597c25822eaa5c07b4d7aae1409624c077132e9b2369c5c33c1238b8ef9aaa7a",
-      "bytes": 50534
+      "sha256": "5ab161a34acc4572211ebb8fc15910c5133105d456e5685ed1d17a1a634b068c",
+      "bytes": 50664
     },
     {
       "file": "YIG_엑시콘_기업분석_작업로그.md",
-      "sha256": "26fef45ae5e1dd461ff1f13d043100c81c162f56039c15894f76185ff3495c8a",
-      "bytes": 83085
+      "sha256": "150805653a403e57da469973d141b2c5dde5ca1d6073910f70fcd44860639f72",
+      "bytes": 86007
     },
     {
       "file": "requirements-chartpack.txt",
@@ -610,8 +610,8 @@
   "external_visualizations": [
     {
       "file": "C:/Users/kuri/OneDrive/com.rea-visualizations/exicon-evidence-state.html",
-      "sha256": "054e1e682c6583c9fe0b48c368b2c3ff1dacb9f5d14de410690f1b1b489d22e5",
-      "bytes": 27786
+      "sha256": "6efb07f180e45452613e162946ec8cc93f82ac270ea3bed63a1158438f033619",
+      "bytes": 75842
     }
   ],
   "figures": [
