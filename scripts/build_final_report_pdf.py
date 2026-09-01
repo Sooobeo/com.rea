@@ -153,13 +153,18 @@ def cell(
     bold: bool = False,
     small: bool = True,
     text_color=INK,
+    font_size: float | None = None,
+    leading: float | None = None,
 ) -> Paragraph:
+    parent = styles["KSmall" if small else "KBody"]
     style = ParagraphStyle(
         "CellTmp",
-        parent=styles["KSmall" if small else "KBody"],
+        parent=parent,
         fontName="MalgunBold" if bold else "Malgun",
         textColor=text_color,
         alignment=TA_LEFT,
+        fontSize=font_size or parent.fontSize,
+        leading=leading or (font_size + 3 if font_size else parent.leading),
     )
     return Paragraph(str(text), style)
 
@@ -169,7 +174,16 @@ def table(rows: list[list[str]], widths: list[float], header: bool = True, font_
     for r_idx, row in enumerate(rows):
         is_header = header and r_idx == 0
         cooked.append(
-            [cell(v, bold=is_header, text_color=colors.white if is_header else INK) for v in row]
+            [
+                cell(
+                    v,
+                    bold=is_header,
+                    text_color=colors.white if is_header else INK,
+                    font_size=font_size,
+                    leading=font_size + 3,
+                )
+                for v in row
+            ]
         )
     t = Table(cooked, colWidths=widths, repeatRows=1 if header else 0, hAlign="LEFT")
     commands = [
@@ -255,7 +269,7 @@ def build_story() -> list:
         Spacer(1, 48 * mm),
         p("엑시콘 기업분석 보고서", "CoverTitle"),
         Spacer(1, 7 * mm),
-        p("수주 → 매출 → 이익 → 현금 전환의 증거 상태", "CoverSub"),
+        p("산업구조 → 엑시콘 포지션 → 수주·매출·현금 전환", "CoverSub"),
         Spacer(1, 45 * mm),
         p("분석 기준", "CoverSub"),
         p("공시 컷오프 2026-08-31 09:50 KST", "CoverSub"),
@@ -268,6 +282,8 @@ def build_story() -> list:
     story += [
         p("Executive Summary", "KHeading"),
         p("2026년 상반기에는 매출과 영업이익의 전환이 확인됐지만 현금 전환은 아직 끝나지 않았다. 연결 매출 412.74억원, 영업이익 21.69억원, OCF -83.11억원이다. 2분기 OPM은 13.14%로 회복했으나 파생 OCF는 -30.73억원이다."),
+        p("산업 배경은 우호적이다. SEMI는 2026년 글로벌 테스트 장비 매출이 31.0% 증가한 153억달러에 이를 것으로 전망했고 AI·HBM·이종 패키징의 복잡성과 성능·신뢰성 요구를 동인으로 제시했다. 그러나 이는 산업 맥락 C이지 엑시콘 매출 성장률이 아니다."),
+        p("엑시콘의 확인된 위치는 후공정 Memory·Burn-in·CLT, SSD Aging Tester와 관련 Board, CIS 중심 SoC Tester다. 2026 H1 제품매출은 Memory 91.1%, SSD 8.9%, SoC 비중 0.0%였다. 전용 HBM Tester와 HBM 직접 매출은 U다."),
         p("반기보고서 수주표의 계약가치 1,018.01억원과 기납품 172.03억원은 사실이다. 그러나 표에는 재무상태표일 뒤인 7월 7일 계약 498.50억원이 포함되고, 계약별 검수·고객수락·연결매출 귀속액은 없다. 계약가치·기납품은 F, 계약별 수익인식액은 U다."),
         p("8월 28일 종가 25,900원 기준 시가총액은 3,380.16억원, 6월 말 순현금을 차감한 시점 혼합 추정 EV는 3,203.66억원이다. EV/LTM Sales 3.28배는 현재가격 자기진단일 뿐 적정가치가 아니다."),
         Spacer(1, 3 * mm),
@@ -283,33 +299,130 @@ def build_story() -> list:
             [76 * mm, 78 * mm, 22 * mm],
         ),
         Spacer(1, 5 * mm),
-        p("현재 결론: <b>운영 회복 확인 / 현금 전환 미완료 / 계약별 수익인식 U / 목표가격 U</b>", "KSub"),
+        p("현재 결론: <b>산업 순풍 C / Memory·SSD 포지션 확인 / 운영 회복 F / 현금 전환 미완료 / 계약별 수익인식 U</b>", "KSub"),
         PageBreak(),
     ]
 
     story += [
-        p("1. 분석 방법과 증거 규칙", "KHeading"),
-        p("F는 공식 사실, C는 맥락, E는 공시 수치의 계산, M은 다음 확인 사건, U는 공개 증거로 식별 불가능한 값이다. 완료란 모든 칸을 숫자로 채우는 것이 아니라 확인 가능한 값은 수치로, 확인 불가능한 값은 근거 있는 U 판정으로 닫는 것이다."),
+        p("1. 분석 방법과 업종 범위", "KHeading"),
+        p("F는 공식 사실, C는 산업·회사 맥락, E는 공시 수치의 계산, M은 다음 확인 사건, U는 공개 증거로 식별 불가능한 값이다. 확인 가능한 값은 수치로, 확인 불가능한 값은 근거 있는 U로 닫는다."),
+        table(
+            [
+                ["업종 범주", "기능", "대표 구성", "엑시콘과의 관계"],
+                ["ATE", "전기 신호로 기능·성능·신뢰성 판정", "Tester·Test Head·Software", "핵심 사업 범주"],
+                ["Interface·이송·열제어", "소자 접촉·자동 이송·온도 제어", "Board·Socket·Probe Card·Handler·Chamber", "일부 Board·Chamber형 장비"],
+                ["검사·계측", "물리 결함·치수 측정", "광학·전자빔 검사장비", "전기적 테스트와 다른 장비군"],
+                ["OSAT", "패키징·테스트 위탁 제조", "Assembly·Package Test Service", "서비스 사업자가 아닌 장비 공급사"],
+            ],
+            [31 * mm, 52 * mm, 50 * mm, 43 * mm],
+            font_size=7.0,
+        ),
+        Spacer(1, 6 * mm),
+        p("읽을 때의 핵심", "KSub"),
+        bullet("글로벌 Test Equipment 전망은 엑시콘의 Addressable Opportunity를 설명하는 C이며 회사 매출 전망이 아니다."),
+        bullet("계약가치·기납품·회사 전체 매출·계약별 수익인식은 서로 다른 증거 레인이다."),
+        bullet("U를 0으로 바꾸거나 임의의 인식률·제품마진·Peer 배수를 넣지 않는다."),
+        PageBreak(),
+    ]
+
+    story += [
+        p("2.1 산업구조와 테스트 경제성", "KHeading"),
+        p("반도체 테스트는 제조가 끝난 뒤 한 번 수행하는 단일 공정이 아니다. 설계 검증에서 웨이퍼, 패키지 Final Test, Burn-in, System Level Test와 SSD Aging까지 여러 삽입점에서 품질·수율·출시속도·테스트 원가를 관리한다."),
+        table(
+            [
+                ["단계", "주요 주체", "테스트 셀", "경제적 목적"],
+                ["설계·평가", "Fabless·IDM", "ATE·Device Interface", "설계 결함 조기 발견·출시 단축"],
+                ["웨이퍼 테스트", "Foundry·IDM·OSAT", "ATE·Prober·Probe Card", "불량 Die 선별·Known Good Die"],
+                ["패키징", "IDM·OSAT", "2.5D/3D·Chiplet·HBM Integration", "기능 통합·대역폭·전력 효율"],
+                ["Final·Burn-in·SLT", "IDM·OSAT", "ATE·Handler·Socket·Board·Thermal", "기능·신뢰성·Mission Mode 검증"],
+                ["Module·Storage", "Memory·SSD 제조사", "Module·CLT·SSD Aging System", "완제품 안정성·Protocol·장시간 부하"],
+            ],
+            [30 * mm, 40 * mm, 57 * mm, 49 * mm],
+            font_size=7.0,
+        ),
+        Spacer(1, 6 * mm),
+        p("장비 수요의 방향", "KSub"),
+        p("소자 수 × Test Insertion 수 × Test Time ÷ Parallelism - 기존 장비 재사용·업그레이드 = 신규 Tester·Board·Service 수요의 방향", "KBody"),
+        table(
+            [
+                ["수요를 높이는 요인", "신규 장비를 상쇄하는 요인"],
+                ["고속 I/O·전력밀도·Chiplet·3D 적층·HBM·고가 Package", "Parallel Test·Adaptive Test·수율 안정화"],
+                ["성능·신뢰성 규격 강화·다중 Test Insertion·Thermal Control", "기존 Platform 재사용·Module Upgrade·Dual Sourcing"],
+                ["신규 Protocol·대용량 SSD·짧은 제품 전환주기", "고객 Capex 시점 지연·검증 기간 장기화"],
+            ],
+            [88 * mm, 88 * mm],
+            font_size=7.2,
+        ),
+        Spacer(1, 5 * mm),
+        p("근거: R20 Advantest Investors Guide 2026. 양산 테스트는 Wafer Test와 Package Test로 구분되고, 고성능 소자일수록 Tester·Handler·Device Interface·열제어를 함께 최적화해야 한다.", "KSmall"),
+        PageBreak(),
+    ]
+
+    story += [
+        p("2.2 2026년 산업 동향", "KHeading"),
+        p("AI/HPC는 Logic·HBM·Storage의 수요뿐 아니라 열·신호무결성·신뢰성 검증을 어렵게 해 테스트 강도를 높인다. 그러나 산업 전망과 글로벌 장비사 실적을 엑시콘 성장률로 대입하지 않는다."),
+        table(
+            [
+                ["공식 근거", "확인된 변화", "엑시콘 해석", "상태·공백"],
+                ["R18 SEMI 2026-07", "Test Equipment 2025 +55.3%, 2026 +31.0%·153억달러 전망", "글로벌 기회 집합 확대", "산업 C / 점유율 U"],
+                ["R19 SEMI 2026-04", "AI Training-HBM, Inference-Data Center NAND·Storage", "Memory·SSD 방향성과 부합", "발주 전환 M/U"],
+                ["R21 Advantest IAR", "Chiplet·2.5D/3D·HBM이 Thermal·Signal·Reliability 복잡도 확대", "테스트 난도 상승은 우호적", "HBM 직접 매출 U"],
+                ["R22 Teradyne 10-K", "2025 AI Compute가 Test 성장을 견인; HBM·DRAM Final Test 중요", "실제 업계 사례", "타사 실적 대입 금지"],
+            ],
+            [31 * mm, 62 * mm, 48 * mm, 35 * mm],
+            font_size=6.8,
+        ),
+        Spacer(1, 6 * mm),
+        bullet("SEMI는 2026년 DRAM 장비 +39.0%, NAND 장비 +30.7%를 전망하고 한국 투자 동인으로 HBM 등 첨단 Memory를 제시했다."),
+        bullet("Advanced Package는 더 많은 Test Insertion·Thermal·System-level 검증을 요구하지만 Exicon 전용 HBM Tester는 공개되지 않았다."),
+        bullet("Enterprise SSD·NAND 확대는 SSD Aging Tester의 방향성과 맞지만 고객 투자·규격·수주·검수 전환은 별도 증거다."),
+        p("결론: 업황 강세는 기회를 넓히지만 엑시콘의 고객 승인·수주·검수·현금 회수를 자동으로 보장하지 않는다.", "KCaption"),
+        PageBreak(),
+    ]
+
+    story += [
+        p("2.3 엑시콘의 포지션", "KHeading"),
+        p("엑시콘은 AI Test 생태계 전체를 공급하는 Global Full-line ATE 기업도, 반복 교체형 Probe Card·Socket 순수업체도 아니다. 공시로 확인되는 중심은 후공정 Memory·Burn-in·CLT, SSD Aging Tester와 관련 Board이며 SoC·CIS는 확장 영역이다."),
+        figure(
+            "05_v02_test_value_chain_position.png",
+            "결론: 제품군은 여러 테스트 기능 영역에 있지만 공정별 점유율·HBM 직접 매출·고객 투자 전환율은 U다.",
+            76,
+        ),
+        Spacer(1, 3 * mm),
+        table(
+            [
+                ["제품군", "기능 영역", "2026 H1", "산업 노출", "공백"],
+                ["Memory·CLT·Burn-in·CIB", "DRAM Component·Module·Reliability", "91.1% F", "Advanced Memory C", "세부매출·HBM·점유율 U"],
+                ["SSD Tester", "SATA·SAS·PCIe Gen5·UFS Aging", "8.9% F", "eSSD·NAND C", "고객·규격별 매출·Margin U"],
+                ["SoC·CIS", "Wafer/Package 기능 Test Platform", "0.0% F / 금액 0 E", "AI ASIC·CIS C", "양산매출·점유율 U"],
+                ["Board·Interface", "Memory 범주 내 CIB·Board", "별도 미공개", "설치기반 후속수요 C", "반복매출·교체주기 U/M"],
+            ],
+            [36 * mm, 50 * mm, 29 * mm, 31 * mm, 30 * mm],
+            font_size=6.5,
+        ),
+        PageBreak(),
+    ]
+
+    story += [
+        p("2.4 이 분석이 갖는 의미", "KHeading"),
+        p("산업 호황은 기회 집합을 넓히지만 회사 수혜를 확정하지 않는다. 핵심은 산업 성장률을 낙관적으로 반복하는 것이 아니라 산업 수요가 실제 회사의 발주·매출·현금으로 전환되는지를 단계별 공식 증거로 확인하는 데 있다."),
         figure(
             "05_v01_demand_to_revenue_evidence_path.png",
             "결론: 산업 수요와 엑시콘 매출 사이에는 고객 투자, 발주, 납품, 검수·수락이라는 별도의 증거 관문이 있다.",
-            102,
+            94,
         ),
         Spacer(1, 4 * mm),
-        p("U를 0으로 바꾸거나 임의의 인식률·제품마진·Peer 배수를 넣지 않았다. 계약금액과 기납품은 확인되더라도 회사 전체 매출과 합산하지 않는다.", "KSmall"),
-        PageBreak(),
-    ]
-
-    story += [
-        p("2. 산업과 테스트 밸류체인", "KHeading"),
-        p("엑시콘은 공시상 Memory Tester, SSD Tester, SoC Tester와 관련 보드·인터페이스 제품을 공급하는 후공정 테스트 장비 업체다. AI·HPC와 고용량 메모리 수요가 테스트 강도를 높일 수 있다는 설명은 맥락 C이며, 이를 엑시콘 점유율이나 계약금액으로 직접 치환하지 않는다."),
-        figure(
-            "05_v02_test_value_chain_position.png",
-            "결론: 공식 제품군은 여러 테스트 기능 영역에 위치하지만 공시만으로 공정별 점유율이나 고객 투자 전환율은 알 수 없다.",
-            105,
+        table(
+            [
+                ["층위", "현재 확인", "상태", "분석 의미"],
+                ["산업", "Test Equipment·Memory·Storage 투자 확대", "C", "기회 집합 확대"],
+                ["회사", "대형 수주·H1 매출 회복·Q2 영업흑자", "F/E", "상업적 포착의 초기 증거"],
+                ["실행", "계약별 검수·매출 귀속 U, OCF 음수", "U/M", "수혜 확정과 현금 전환은 미완료"],
+                ["가치", "EV 계산 가능, 동일 Peer·목표가격 U", "E/U", "산업 강세만으로 적정가치 결론 금지"],
+            ],
+            [26 * mm, 70 * mm, 22 * mm, 58 * mm],
+            font_size=7.0,
         ),
-        Spacer(1, 4 * mm),
-        p("웨이퍼 테스트와 패키지 최종 테스트를 분리해 표시했다. 이 도식은 시간 순서도가 아니라 공시상 제품 용도 영역의 지도다.", "KSmall"),
         PageBreak(),
     ]
 
@@ -473,8 +586,9 @@ def build_story() -> list:
 
     story += [
         p("12. 결론과 재현성", "KHeading"),
+        p("산업 측면에서는 AI/HPC, Advanced Memory, NAND·Enterprise SSD, Advanced Packaging이 테스트 삽입 수·난도·신뢰성 요구를 높이는 순풍이 확인된다. 다만 엑시콘의 현재 실적 포지션은 Memory·SSD 중심이고 HBM 직접 매출·SoC 양산매출·공정별 점유율은 U다."),
         p("2026년 상반기에는 실제 회사 전체 매출 412.74억원과 영업이익 21.69억원으로 운영 회복이 관측됐다. 다만 어떤 계약금액이 매출에 귀속됐는지는 식별되지 않고, 기납품 172.03억원을 상반기 매출에 다시 더할 수 없다."),
-        p("분석의 초점은 수주 존재에서 검수·수락·매출·현금 전환으로 이동한다. 가장 강한 긍정 증거는 2분기 영업흑자이고, 가장 강한 경고 증거는 재고·채권 증가와 음의 OCF다. 동일 기준 Peer 배수가 없어 적정가치·목표가격 판단은 유보한다."),
+        p("이 분석의 의미는 산업 수요 → 고객 투자 → 장비 승인·수주 → 납품·검수 → 매출 인식 → 현금 회수의 전환 사슬을 분리하는 데 있다. 가장 강한 긍정 증거는 2분기 영업흑자이고, 가장 강한 경고 증거는 재고·채권 증가와 음의 OCF다. 동일 기준 Peer 배수가 없어 적정가치·목표가격 판단은 유보한다."),
         p("최종 판정", "KSub"),
         table(
             [
@@ -500,6 +614,8 @@ def build_story() -> list:
         Spacer(1, 5 * mm),
         p("핵심 공식 원문", "KSub"),
         p("R17: <link href='https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814001521' color='#2E6F9E'>2026년 반기보고서</link> · R10: <link href='https://dart.fss.or.kr/navi/searchNavi.do?naviCode=A002&amp;naviCrpCik=00611736&amp;naviCrpNm=%EC%97%91%EC%8B%9C%EC%BD%98' color='#2E6F9E'>DART 정기공시 검색</link> · R09: <link href='https://kind.krx.co.kr/common/stockprices.do?isurCd=09287&amp;method=searchStockPricesMain' color='#2E6F9E'>KIND 주가정보</link>", "KSmall"),
+        p("R18: <link href='https://www.semi.org/en/semi-press-release/global-semiconductor-equipment-sales-forecast-to-reach-a-record-229-billion-dollars-in-2028-semi-reports' color='#2E6F9E'>SEMI 2026 Mid-Year Equipment Forecast</link> · R19: <link href='https://www.semi.org/en/semi-press-release/semi-projects-double-digit-growth-in-global-300mm-fab-equipment-spending-for-2026-and-2027' color='#2E6F9E'>SEMI 300mm Fab Outlook</link>", "KSmall"),
+        p("R20: <link href='https://www.advantest.com/document/en/investors/ir-library/investors-guide/Investors_Guide_2601E.pdf' color='#2E6F9E'>Advantest Investors Guide 2026</link> · R21: <link href='https://www.advantest.com/document/en/investors/ir-library/annual/E_all_IAR2025.pdf' color='#2E6F9E'>Advantest IAR 2025</link> · R22: <link href='https://investors.teradyne.com/sec-filings/all-sec-filings/content/0001193125-26-059002/ter-20251231.htm' color='#2E6F9E'>Teradyne 2025 Form 10-K</link>", "KSmall"),
         p("Phase 5 run 20260831T133214+0900<br/>H1 원문 SHA-256: 035C607AE99C700743F24DA5A84246D27A7E7D9A75BD9DC8BABD383AF65F7505", "KSmall"),
     ]
     return story
@@ -516,7 +632,7 @@ def main() -> None:
         bottomMargin=18 * mm,
         title="엑시콘 기업분석 보고서",
         author="Codex",
-        subject="2026년 수주·매출·현금 전환의 근거 기반 분석",
+        subject="반도체 테스트 산업구조·엑시콘 포지션·수주·매출·현금 전환 분석",
     )
     doc.build(build_story(), onFirstPage=page_decor, onLaterPages=page_decor)
     print(OUTPUT)

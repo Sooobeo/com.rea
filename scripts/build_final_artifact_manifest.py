@@ -11,6 +11,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 KST = timezone(timedelta(hours=9))
 DEFAULT_OUTPUT = ROOT / "YIG_엑시콘_최종산출물_매니페스트_2026-08-31.json"
+EXTERNAL_VISUALIZATION = Path(
+    r"C:\Users\kuri\OneDrive\com.rea-visualizations\exicon-evidence-state.html"
+)
 
 
 def read_json(path: Path) -> Any:
@@ -179,6 +182,7 @@ def main() -> int:
             "contract_recognition": "U - contract-level acceptance and revenue attribution not disclosed",
         },
         "deliverables": [file_entry(path) for path in required_deliverables],
+        "external_visualizations": [file_entry(EXTERNAL_VISUALIZATION)],
         "figures": render_manifest["figures"],
         "xlsx_deliverables": {
             "status": "blocked",

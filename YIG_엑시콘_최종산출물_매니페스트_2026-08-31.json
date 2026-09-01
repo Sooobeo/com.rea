@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "generated_at": "2026-08-31T13:47:31+09:00",
+  "generated_at": "2026-09-01T11:02:33+09:00",
   "project": {
     "issuer": "엑시콘",
     "stock_code": "092870",
@@ -563,13 +563,13 @@
   "deliverables": [
     {
       "file": "03_엑시콘_기업분석_보고서.md",
-      "sha256": "f532ecdbbf0e346d7d2608621e78ce95e380c4df45a9efb545d5aab04abfd61c",
-      "bytes": 19078
+      "sha256": "84e0202f44040c8fa33b72ad79d0bf03efa0e0f2f1ff3555b0f300ac145ea77d",
+      "bytes": 26673
     },
     {
       "file": "output/pdf/03_엑시콘_기업분석_보고서.pdf",
-      "sha256": "a45e853e7bd48779a1ba961fc8573805d349074d0d1897b1f0e8e4b3f3b6d00e",
-      "bytes": 3635395
+      "sha256": "2a743eaa4e10acd331aacd5bd536570e547871f7452a4c76fea041f94c9a41f3",
+      "bytes": 3663007
     },
     {
       "file": "05_엑시콘_Phase5_시각화_검증.md",
@@ -583,18 +583,18 @@
     },
     {
       "file": "YIG_엑시콘_프로젝트_결과보고서_2026-08-31.md",
-      "sha256": "2a70714f1fdd0dd75629ce0a1b90e4934783da0c28fdb4a540e6811048e1bddf",
-      "bytes": 8973
+      "sha256": "a01ced91b73c6039919e1d321a1db25dd924ef5c9346e51457a77d6bb570637e",
+      "bytes": 10432
     },
     {
       "file": "YIG_엑시콘_기업분석_보고서_구현계획서.md",
-      "sha256": "785ef79482bbc83546f87931cb9eba78a8561dea296094d6a204b54ce53db575",
-      "bytes": 50034
+      "sha256": "597c25822eaa5c07b4d7aae1409624c077132e9b2369c5c33c1238b8ef9aaa7a",
+      "bytes": 50534
     },
     {
       "file": "YIG_엑시콘_기업분석_작업로그.md",
-      "sha256": "ca7ba19382020377473d434a4d8c562c5652836f985dd1fa7d2ac26178373fc8",
-      "bytes": 79698
+      "sha256": "26fef45ae5e1dd461ff1f13d043100c81c162f56039c15894f76185ff3495c8a",
+      "bytes": 83085
     },
     {
       "file": "requirements-chartpack.txt",
@@ -605,6 +605,13 @@
       "file": "requirements-report.txt",
       "sha256": "9c7d99c1afcda5f9222324009c229f6125f1fe26cc36c4818e4f33e22d7d8fd6",
       "bytes": 93
+    }
+  ],
+  "external_visualizations": [
+    {
+      "file": "C:/Users/kuri/OneDrive/com.rea-visualizations/exicon-evidence-state.html",
+      "sha256": "054e1e682c6583c9fe0b48c368b2c3ff1dacb9f5d14de410690f1b1b489d22e5",
+      "bytes": 27786
     }
   ],
   "figures": [

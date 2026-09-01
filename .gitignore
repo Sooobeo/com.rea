@@ -14,3 +14,6 @@ __pycache__/
 .venv/
 venv/
 *.pyc
+
+# Generated temporary files and browser audit profiles
+/tmp/
